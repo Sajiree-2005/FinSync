@@ -1,90 +1,145 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import pandas as pd
+import re
 
 app = Flask(__name__)
 
-# ---------------- Step 1: Load historical weekly data ----------------
+# --------- Load Historical Data ---------
 df1 = pd.read_excel("data/student_spending1.xlsx")
 df2 = pd.read_excel("data/student_spending2.xlsx")
 df = pd.concat([df1, df2], ignore_index=True)
 
-# List of expense categories
-categories = df.columns[2:].tolist()  # skip monthly_income and financial_aid
+# Define expense categories
+categories = ["tuition","housing","food","transportation","books_supplies",
+              "entertainment","personal_care","technology","health_wellness","miscellaneous"]
 
-# ---------------- Helper functions ----------------
-def calculate_financial_health(expenses, income, financial_aid):
-    """
-    Weekly Financial Health Score (0-100)
-    - Based on total weekly spending vs income + aid
-    - Balanced spending across categories
-    """
+# Ensure all expense columns are numeric
+for cat in categories:
+    df[cat] = pd.to_numeric(df[cat], errors='coerce').fillna(0)
+
+# --------- Initialize Current Week Expenses ---------
+current_expenses = {cat:0 for cat in categories}
+
+# --------- Helper: Get Previous Week Expenses ---------
+def get_last_week_expenses():
+    if len(df) > 0:
+        last_row = df.iloc[-1]
+        last_week_expenses = {cat: last_row[cat] for cat in categories}
+        return last_week_expenses
+    else:
+        return {cat:0 for cat in categories}
+
+# --------- Financial Health Score Function ---------
+def calculate_health_score(expenses, income, financial_aid=0):
     total_expense = sum(expenses.values())
-    total_income = income + financial_aid
-    savings_ratio = max(0, (total_income - total_expense) / total_income)
+    savings_ratio = max(0, income - total_expense) / income
+    score = int(savings_ratio * 70)  # 70% weight
     
-    category_std = pd.Series(expenses).std()
-    balanced_score = max(0, 1 - category_std / (total_expense + 1e-5))  # prevent div by zero
+    # Financial aid contributes up to 10%
+    aid_score = min(financial_aid / income * 100, 10)
     
-    score = int((savings_ratio * 70) + (balanced_score * 30))
-    return min(max(score, 0), 100)
+    # Extra 20% for low spending categories (savings > 20% income)
+    buffer_score = 20 if savings_ratio > 0.2 else 0
+    
+    final_score = min(100, score + aid_score + buffer_score)
+    return final_score
 
-def generate_expense_mood_linker(expenses):
-    insights = []
-    for cat, amt in expenses.items():
-        if amt > 1000:
-            insights.append(f"High spending on {cat} may relate to your mood. Observe patterns!")
-    return insights
+# --------- Fun Gamified Challenges Function ---------
+def generate_fun_challenges(expenses, income):
+    challenges = []
 
-def generate_financial_nudges(expenses):
-    nudges = []
-    for cat, amt in expenses.items():
-        if amt > 1500:
-            nudges.append(f"Try reducing {cat} spending by 10% this week to save more!")
-    return nudges
+    # Food / Dining challenge
+    if expenses.get("food",0) > 0.2 * income:
+        challenges.append("🎯 No Takeout Challenge – Try cooking at home for a week!")
 
-# ---------------- Flask Routes ----------------
-@app.route("/", methods=["GET", "POST"])
-def index():
-    # Default: average of weekly history
-    historical_avg = df[categories].mean().to_dict()
-    avg_income = df['monthly_income'].mean()
-    avg_financial_aid = df['financial_aid'].mean()
+    # Entertainment challenge
+    if expenses.get("entertainment",0) > 500:
+        challenges.append("💡 Movie-Free Weekend – Skip movies this weekend to save money!")
 
-    # Default display: historical averages
-    display_expenses = historical_avg.copy()
+    # Technology / gadgets challenge
+    if expenses.get("technology",0) > 300:
+        challenges.append("🖥️ Tech Timeout – Avoid online shopping for gadgets for 1 week!")
 
-    # Current user input (empty by default)
-    current_expenses = {cat: 0 for cat in categories}
-    income = avg_income
-    financial_aid = avg_financial_aid
+    # Fun saving challenge if overall savings good
+    total_expense = sum(expenses.values())
+    if total_expense < 0.7 * income:
+        challenges.append("🏆 Save & Treat – You’re saving well! Treat yourself within budget.")
+
+    return challenges
+
+# --------- Home Route ---------
+@app.route("/", methods=["GET","POST"])
+def home():
     user_input_given = False
+
+    # Previous week
+    previous_week_expenses = get_last_week_expenses()
+    total_prev_week = sum(previous_week_expenses.values())
+    
+    # Copy previous week to current for default
+    global current_expenses
+    current_expenses = previous_week_expenses.copy()
+
+    # Default income and aid from historical average
+    weekly_income = df['monthly_income'].mean()
+    financial_aid = df['financial_aid'].mean()
 
     if request.method == "POST":
         if request.form.get("use_input") == "yes":
             user_input_given = True
-            # Read only entered fields; missing fields default to 0
+            income_val = request.form.get("monthly_income")
+            aid_val = request.form.get("financial_aid")
+            if income_val:
+                weekly_income = float(income_val)
+            if aid_val:
+                financial_aid = float(aid_val)
             for cat in categories:
-                value = request.form.get(cat)
-                current_expenses[cat] = float(value) if value else 0
-            income_input = request.form.get("monthly_income")
-            aid_input = request.form.get("financial_aid")
-            income = float(income_input) if income_input else avg_income
-            financial_aid = float(aid_input) if aid_input else avg_financial_aid
-            display_expenses = current_expenses  # show user input in table
+                val = request.form.get(cat)
+                if val:
+                    current_expenses[cat] = float(val)
 
-    # Calculate features based on current input or historical average
-    health_score = calculate_financial_health(display_expenses, income, financial_aid)
-    mood_insights = generate_expense_mood_linker(display_expenses)
-    nudges = generate_financial_nudges(display_expenses)
+    # Financial health score
+    health_score = calculate_health_score(current_expenses, weekly_income, financial_aid)
 
-    return render_template(
-        "index.html",
-        expenses=display_expenses,
-        health_score=health_score,
-        mood_insights=mood_insights,
-        nudges=nudges,
-        user_input_given=user_input_given
-    )
+    # Fun gamified challenges
+    challenges = generate_fun_challenges(current_expenses, weekly_income)
+
+    return render_template("index.html",
+                           health_score=health_score,
+                           mood_insights=[],
+                           nudges=challenges,
+                           expenses=current_expenses,
+                           total_prev_week=total_prev_week,
+                           user_input_given=user_input_given)
+
+# --------- Voice Input Route ---------
+@app.route("/log_expense", methods=["POST"])
+def log_expense():
+    data = request.get_json()
+    text = data.get("text","").lower()
+    amount = None
+    category = None
+
+    # Extract amount
+    match = re.search(r'\d+(\.\d+)?', text)
+    if match:
+        amount = float(match.group())
+
+    # Detect any category in text
+    for cat in categories:
+        if cat.replace("_"," ") in text:
+            category = cat
+            break
+
+    # Error handling
+    if not category:
+        return jsonify({"message": "No valid expense category detected. Mention one of: " + ", ".join([c.replace('_',' ') for c in categories])})
+    if not amount:
+        return jsonify({"message": "No amount detected. Please say a number for your expense."})
+
+    # Update current expenses
+    current_expenses[category] += amount
+    return jsonify({"message": f"Logged ₹{amount} to {category.replace('_',' ')}!"})
 
 if __name__ == "__main__":
     app.run(debug=True)
