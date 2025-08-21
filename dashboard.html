@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dashboard - FinVoice</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>Dashboard</h1>
+      <p>Overview of your financial journey 💰</p>
+    </header>
+
+    <div class="container">
+      <h2>Total Expenses: ₹{{ total }}</h2>
+      <h3>Expense Records</h3>
+      {{ tables|safe }}
+      <br />
+      <a href="/">⬅ Back Home</a>
+      <a href="/add_expense">➕ Add More</a>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Finvoice Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>Finvoice - AI Financial Assistant</h1>
+      <p>Your personalized student finance dashboard</p>
+    </header>
+
+    <main class="container">
+      <!-- Financial Health Score -->
+      <section class="card">
+        <h2>💰 Financial Health Score</h2>
+        <div class="score">{{ health_score }}/100</div>
+        <p>
+          Based on your weekly spending patterns, income, and financial aid.
+        </p>
+      </section>
+
+      <!-- Expense Mood Insights -->
+      <section class="card">
+        <h2>😊 Expense Mood Insights</h2>
+        {% if mood_insights %}
+        <ul>
+          {% for insight in mood_insights %}
+          <li>{{ insight }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>No notable patterns detected yet.</p>
+        {% endif %}
+      </section>
+
+      <!-- Financial Nudges & Challenges -->
+      <section class="card">
+        <h2>🎯 Financial Nudges & Challenges</h2>
+        {% if nudges %}
+        <ul>
+          {% for nudge in nudges %}
+          <li>{{ nudge }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>Great job! No immediate nudges needed.</p>
+        {% endif %}
+      </section>
+
+      <!-- Weekly Expenses Table -->
+      <section class="card">
+        <h2>📊 Weekly Expenses</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for category, amount in expenses.items() %}
+            <tr>
+              <td>{{ category.replace("_", " ").title() }}</td>
+              <td>
+                {% if amount == amount|int %} {{ amount|int }} {% else %} {{
+                '%.2f' % amount }} {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Conditional Input Form -->
+      <section class="card">
+        <h2>✏️ Input Current Week Expenses</h2>
+        <form method="POST">
+          <label>Do you want to input your expenses?</label>
+          <select name="use_input" id="use_input" onchange="toggleForm()">
+            <option value="no" {% if not user_input_given %}selected{% endif %}>
+              No, use historical averages
+            </option>
+            <option value="yes" {% if user_input_given %}selected{% endif %}>
+              Yes, I want to input
+            </option>
+          </select>
+
+          <div
+            class="expense-inputs"
+            id="expenseForm"
+            style="display: none; margin-top: 15px"
+          >
+            <label>Weekly Income (₹):</label>
+            <input type="number" name="monthly_income" step="0.01" />
+
+            <label>Financial Aid (₹):</label>
+            <input type="number" name="financial_aid" step="0.01" />
+
+            {% for category in expenses.keys() %}
+            <label>{{ category.replace('_', ' ').title() }} (₹):</label>
+            <input type="number" name="{{ category }}" step="0.01" />
+            {% endfor %}
+
+            <button type="submit">Update Dashboard</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      function toggleForm() {
+        var select = document.getElementById("use_input");
+        var formDiv = document.getElementById("expenseForm");
+        formDiv.style.display = select.value === "yes" ? "block" : "none";
+      }
+
+      window.onload = function () {
+        var userInputGiven = "{{ user_input_given }}"; // "True" or "False"
+        if (userInputGiven === "True") {
+          document.getElementById("expenseForm").style.display = "block";
+        }
+      };
+    </script>
+  </body>
+</html>
