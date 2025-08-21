@@ -42,9 +42,9 @@
         {% endif %}
       </section>
 
-      <!-- Financial Nudges & Challenges -->
+      <!-- Fun Challenges -->
       <section class="card">
-        <h2>🎯 Financial Nudges & Challenges</h2>
+        <h2>🎯 Fun Financial Challenges</h2>
         {% if nudges %}
         <ul>
           {% for nudge in nudges %}
@@ -52,13 +52,14 @@
           {% endfor %}
         </ul>
         {% else %}
-        <p>Great job! No immediate nudges needed.</p>
+        <p>Great job! No immediate challenges.</p>
         {% endif %}
       </section>
 
-      <!-- Weekly Expenses Table -->
+      <!-- Previous Week Expenses -->
       <section class="card">
-        <h2>📊 Weekly Expenses</h2>
+        <h2>📊 Previous Week Expenses</h2>
+        <p><strong>Total Expenses: ₹{{ total_prev_week }}</strong></p>
         <table>
           <thead>
             <tr>
@@ -114,6 +115,13 @@
           </div>
         </form>
       </section>
+
+      <!-- Voice Expense Logger -->
+      <section class="card">
+        <h2>🎤 Speak to Log Expense</h2>
+        <p>Click below and say an expense like "Food 500"</p>
+        <button onclick="startRecording()">Start Speaking</button>
+      </section>
     </main>
 
     <script>
@@ -124,11 +132,45 @@
       }
 
       window.onload = function () {
-        var userInputGiven = "{{ user_input_given }}"; // "True" or "False"
+        var userInputGiven = "{{ user_input_given }}";
         if (userInputGiven === "True") {
           document.getElementById("expenseForm").style.display = "block";
         }
       };
+
+      // -------- Voice Input --------
+      function startRecording() {
+        if (!("webkitSpeechRecognition" in window)) {
+          alert(
+            "Your browser does not support speech recognition. Use Chrome."
+          );
+          return;
+        }
+
+        let recognition = new webkitSpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.start();
+
+        recognition.onresult = function (event) {
+          let spokenText = event.results[0][0].transcript;
+          console.log("User said:", spokenText);
+
+          fetch("/log_expense", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: spokenText }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              alert(data.message);
+              location.reload();
+            });
+        };
+      }
     </script>
   </body>
 </html>
+
