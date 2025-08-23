@@ -5,6 +5,7 @@ Finvoice is a lightweight financial management and advisory web application desi
 ---
 
 ## **FinSync Folder Structure**
+```
 FinSync/                     # Root project folder
 │
 ├── app.py                   # Main Flask application (backend logic)
@@ -25,7 +26,7 @@ FinSync/                     # Root project folder
 │   └── chatbot.html         # AI chatbot interface
 │
 └── README.md                # Project documentation
-
+```
 
 ---
 
