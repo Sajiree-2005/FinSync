@@ -2,175 +2,279 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Finvoice Dashboard</title>
+    <title>FinSync - Your money in perfect sync</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
-    <header>
-      <h1>Finvoice - AI Financial Assistant</h1>
-      <p>Your personalized student finance dashboard</p>
-    </header>
+    <div class="container">
+      <header>
+        <h1>FinSync</h1>
+        <p>Your money, in perfect sync</p>
+      </header>
 
-    <main class="container">
-      <!-- Financial Health Score -->
-      <section class="card">
-        <h2>💰 Financial Health Score</h2>
-        <div class="score">{{ health_score }}/100</div>
-        <p>
-          Based on your weekly spending patterns, income, and financial aid.
-        </p>
-      </section>
+      <!-- Dashboard -->
+      <section class="dashboard">
+        <div class="box">
+          <h2>💰 Financial Health Score</h2>
+          <p><span class="highlight">{{ fin_health_score }}/100</span></p>
+          <p>Based on your weekly spending patterns</p>
+        </div>
 
-      <!-- Expense Mood Insights -->
-      <section class="card">
-        <h2>😊 Expense Mood Insights</h2>
-        {% if mood_insights %}
-        <ul>
-          {% for insight in mood_insights %}
-          <li>{{ insight }}</li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p>No notable patterns detected yet.</p>
-        {% endif %}
-      </section>
+        <div class="box">
+          <h2>😊 Expense Mood Insights</h2>
+          <p>No notable patterns detected yet.</p>
+        </div>
 
-      <!-- Fun Challenges -->
-      <section class="card">
-        <h2>🎯 Fun Financial Challenges</h2>
-        {% if nudges %}
-        <ul>
-          {% for nudge in nudges %}
-          <li>{{ nudge }}</li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p>Great job! No immediate challenges.</p>
-        {% endif %}
-      </section>
-
-      <!-- Previous Week Expenses -->
-      <section class="card">
-        <h2>📊 Previous Week Expenses</h2>
-        <p><strong>Total Expenses: ₹{{ total_prev_week }}</strong></p>
-        <table>
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Amount (₹)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for category, amount in expenses.items() %}
-            <tr>
-              <td>{{ category.replace("_", " ").title() }}</td>
-              <td>
-                {% if amount == amount|int %} {{ amount|int }} {% else %} {{
-                '%.2f' % amount }} {% endif %}
-              </td>
-            </tr>
+        <div class="box">
+          <h2>🎯 Fun Financial Challenges</h2>
+          <ul>
+            {% for challenge in challenges %}
+            <li>{{ challenge }}</li>
+            {% else %}
+            <li>No challenges at the moment.</li>
             {% endfor %}
-          </tbody>
-        </table>
+          </ul>
+        </div>
       </section>
 
-      <!-- Conditional Input Form -->
-      <section class="card">
-        <h2>✏️ Input Current Week Expenses</h2>
-        <form method="POST">
-          <label>Do you want to input your expenses?</label>
-          <select name="use_input" id="use_input" onchange="toggleForm()">
-            <option value="no" {% if not user_input_given %}selected{% endif %}>
-              No, use historical averages
-            </option>
-            <option value="yes" {% if user_input_given %}selected{% endif %}>
-              Yes, I want to input
-            </option>
-          </select>
+      <!-- Expenses -->
+      <section class="expenses">
+        <!-- Previous Week -->
+        <div class="box">
+          <h2>📊 Previous Week Expenses</h2>
+          <p>
+            Total:
+            <span class="highlight" id="prev_total">{{ prev_total }}</span>
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cat in categories %}
+              <tr>
+                <td>{{ cat.replace('_',' ').title() }}</td>
+                <td>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value="{{ prev_expenses_dict.get(cat, 0) }}"
+                    name="prev_{{ cat }}"
+                    readonly
+                  />
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
-          <div
-            class="expense-inputs"
-            id="expenseForm"
-            style="display: none; margin-top: 15px"
-          >
-            <label>Weekly Income (₹):</label>
-            <input type="number" name="monthly_income" step="0.01" />
+        <!-- Current Week -->
+        <div class="box">
+          <h2>📊 Current Week Expenses</h2>
+          <p>
+            Total:
+            <span class="highlight" id="curr_total">{{ curr_total }}</span>
+          </p>
+          <table id="curr_week_table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cat in categories %}
+              <tr>
+                <td>{{ cat.replace('_',' ').title() }}</td>
+                <td>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value="{{ curr_expenses_dict.get(cat, 0) }}"
+                    id="input_{{ cat }}"
+                  />
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <button onclick="submitTable()">Submit Current Week</button>
+        </div>
 
-            <label>Financial Aid (₹):</label>
-            <input type="number" name="financial_aid" step="0.01" />
-
-            {% for category in expenses.keys() %}
-            <label>{{ category.replace('_', ' ').title() }} (₹):</label>
-            <input type="number" name="{{ category }}" step="0.01" />
-            {% endfor %}
-
-            <button type="submit">Update Dashboard</button>
+        <!-- Voice Input -->
+        <div class="box voice-box">
+          <h2>✏️ Log Expense via Voice</h2>
+          <p>Click and say an expense like "Food 500"</p>
+          <img
+            src="{{ url_for('static', filename='images/speechtext.jpg') }}"
+            alt="Voice Input"
+            class="voice-img"
+          />
+          <input
+            type="text"
+            id="voice_input_box"
+            placeholder="Your spoken expense will appear here"
+            readonly
+          />
+          <div class="voice-buttons">
+            <button type="button" onclick="startRecording()">
+              🎤 Start Voice Input
+            </button>
+            <button type="button" onclick="submitVoice()">✅ Submit</button>
           </div>
-        </form>
+        </div>
       </section>
 
-      <!-- Voice Expense Logger -->
-      <section class="card">
-        <h2>🎤 Speak to Log Expense</h2>
-        <p>Click below and say an expense like "Food 500"</p>
-        <button onclick="startRecording()">Start Speaking</button>
+      <!-- Charts -->
+      <section class="charts">
+        <div class="chart-box"><canvas id="overallChart"></canvas></div>
+        <div class="chart-box"><canvas id="comparisonChart"></canvas></div>
+        <div class="chart-box"><canvas id="streakChart"></canvas></div>
       </section>
-    </main>
+    </div>
 
     <script>
-      function toggleForm() {
-        var select = document.getElementById("use_input");
-        var formDiv = document.getElementById("expenseForm");
-        formDiv.style.display = select.value === "yes" ? "block" : "none";
+      // Update current total dynamically
+      function updateCurrTotal() {
+        let total = 0;
+        {% for cat in categories %}
+          total += parseFloat(document.getElementById('input_{{ cat }}').value || 0);
+        {% endfor %}
+        document.getElementById('curr_total').innerText = total.toFixed(2);
       }
 
-      window.onload = function () {
-        var userInputGiven = "{{ user_input_given }}";
-        if (userInputGiven === "True") {
-          document.getElementById("expenseForm").style.display = "block";
-        }
-      };
+      // Submit current week
+      function submitTable() {
+        let data = {};
+        {% for cat in categories %}
+          data["{{ cat }}"] = parseFloat(document.getElementById('input_{{ cat }}').value || 0);
+        {% endfor %}
 
-      // -------- Voice Input --------
+        fetch("/log_expense", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(resp => {
+          alert(resp.message);
+
+          let prevTotal = 0;
+
+          {% for cat in categories %}
+            let currVal = parseFloat(document.getElementById('input_{{ cat }}').value || 0);
+            // Move current to previous
+            document.querySelector('input[name="prev_{{ cat }}"]').value = currVal.toFixed(2);
+            prevTotal += currVal;
+
+            // Reset current week input
+            document.getElementById('input_{{ cat }}').value = 0;
+          {% endfor %}
+
+          // Update totals
+          document.getElementById('prev_total').innerText = prevTotal.toFixed(2);
+          document.getElementById('curr_total').innerText = '0.00';
+
+          // Update charts
+          buildCharts();
+        });
+      }
+
+      // Voice input
       function startRecording() {
-        if (!("webkitSpeechRecognition" in window)) {
-          alert(
-            "Your browser does not support speech recognition. Use Chrome."
-          );
-          return;
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("Please use Chrome for voice input.");
+            return;
         }
-
         let recognition = new webkitSpeechRecognition();
         recognition.lang = "en-US";
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
-
         recognition.start();
-
-        recognition.onresult = function (event) {
+        recognition.onresult = function(event) {
           let spokenText = event.results[0][0].transcript;
-          console.log("User said:", spokenText);
-
-          fetch("/log_expense", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: spokenText }),
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              alert(data.message);
-              location.reload();
-            });
+          document.getElementById("voice_input_box").value = spokenText;
         };
       }
+
+      function submitVoice() {
+        let text = document.getElementById("voice_input_box").value;
+        if (text.trim() === "") { alert("Please speak or type an expense before submitting."); return; }
+        fetch("/log_expense", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ text: text })
+        }).then(res => res.json())
+          .then(data => { alert(data.message); location.reload(); });
+      }
+
+      // Build charts
+      function buildCharts() {
+        const prevVals = [];
+        const currVals = [];
+        {% for cat in categories %}
+          prevVals.push(parseFloat(document.querySelector('input[name="prev_{{ cat }}"]').value || 0));
+          currVals.push(parseFloat(document.getElementById('input_{{ cat }}').value || 0));
+        {% endfor %}
+
+        // Overall chart
+        const totalExpense = currVals.reduce((a,b)=>a+b,0);
+        const totalSavings = Math.max(0, 5000 - totalExpense);
+        const overallCtx = document.getElementById('overallChart').getContext('2d');
+        new Chart(overallCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Expenses','Savings'],
+            datasets: [{ data: [totalExpense, totalSavings], backgroundColor: ['#FF6B6B','#24ae60'], borderColor:['#fff','#fff'], borderWidth:2 }]
+          },
+          options: { responsive:true }
+        });
+
+        // Comparison chart
+        const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+        new Chart(comparisonCtx, {
+          type: 'bar',
+          data: {
+            labels: {{ categories|tojson|safe }},
+            datasets: [
+              { label:'Previous Week', data: prevVals, backgroundColor:'#2575FC', borderRadius:6 },
+              { label:'Current Week', data: currVals, backgroundColor:'#6A11CB', borderRadius:6 }
+            ]
+          },
+          options: { responsive:true, scales:{y:{beginAtZero:true}}, plugins:{legend:{position:'bottom'}} }
+        });
+
+        // Streak chart
+        const streakCtx = document.getElementById('streakChart').getContext('2d');
+        new Chart(streakCtx, {
+          type:'bar',
+          data:{
+            labels: {{ challenge_labels|tojson|safe }},
+            datasets:[{ label:'Days Completed', data: {{ challenge_values|tojson|safe }}, backgroundColor:'#FF6B6B', borderRadius:6 }]
+          },
+          options:{ responsive:true, plugins:{legend:{display:false}}}
+        });
+      }
+
+      // Add event listeners
+      {% for cat in categories %}
+        document.getElementById('input_{{ cat }}').addEventListener('input', updateCurrTotal);
+      {% endfor %}
+
+      // Initial chart build
+      buildCharts();
     </script>
   </body>
 </html>
+
 
