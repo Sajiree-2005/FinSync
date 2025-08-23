@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About - FinSync</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        background-color: #fdf6e3;
+        margin: 0;
+        padding: 0;
+        color: #333;
+        line-height: 1.7;
+      }
+
+      header.main-header {
+        background-color: #24ae62;
+        padding: 60px 20px;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .about-container {
+        max-width: 900px;
+        margin: 50px auto;
+        padding: 0 20px;
+      }
+
+      .top-section {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 40px;
+        gap: 20px;
+      }
+      .top-text {
+        flex: 1 1 300px;
+      }
+      .top-text h1 {
+        font-size: 2rem;
+        color: #2c3e50;
+        margin-bottom: 15px;
+      }
+      .top-text p {
+        font-size: 1.05rem;
+        color: #333;
+        margin-bottom: 12px;
+      }
+
+      .top-image {
+        flex: 1 1 300px;
+        text-align: center;
+      }
+      .top-image img {
+        max-width: 100%;
+        max-height: 280px;
+        width: auto;
+        height: auto;
+        border-radius: 15px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        object-fit: cover;
+        animation: fadeInUp 1s forwards;
+        opacity: 0;
+      }
+
+      .info-section {
+        margin-bottom: 25px;
+        font-size: 1.05rem;
+        animation: fadeInUp 1s forwards;
+        opacity: 0;
+      }
+      .highlight {
+        color: #27ae60;
+        font-weight: bold;
+      }
+
+      .go-dashboard {
+        display: inline-block;
+        margin: 20px 10px;
+        padding: 12px 25px;
+        background-color: #03461e;
+        color: white;
+        font-weight: bold;
+        text-decoration: none;
+        border-radius: 30px;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        text-align: center;
+      }
+      .go-dashboard:hover {
+        background-color: #1c5980;
+        transform: translateY(-3px);
+      }
+
+      .fade-in {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 1s forwards;
+      }
+      @keyframes fadeInUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .feature-workflow {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        margin: 40px 0;
+      }
+      .workflow-box {
+        color: white;
+        font-weight: bold;
+        font-size: 1.15rem;
+        text-align: center;
+        padding: 25px 20px;
+        border-radius: 20px;
+        min-width: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .workflow-box i {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+      }
+      .workflow-box:hover {
+        transform: translateY(-6px) scale(1.05);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      }
+
+      .arrow {
+        font-size: 2rem;
+        color: #2980b9;
+        font-weight: bold;
+        align-self: center;
+      }
+      .workflow-track {
+        background: linear-gradient(135deg, #4facfe, #3498db);
+      }
+      .workflow-analyze {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+      }
+      .workflow-insights {
+        background: linear-gradient(135deg, #f1c40f, #f39c12);
+      }
+      .workflow-save {
+        background: linear-gradient(135deg, #e67e22, #d35400);
+      }
+
+      @media (max-width: 768px) {
+        .top-section {
+          flex-direction: column-reverse;
+          text-align: center;
+        }
+        .top-text,
+        .top-image {
+          text-align: center;
+        }
+        .top-text h1 {
+          font-size: 1.8rem;
+        }
+        .feature-workflow {
+          flex-direction: column;
+        }
+        .arrow {
+          transform: rotate(90deg);
+          margin: 10px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="main-header"></header>
+
+    <div class="about-container">
+      <div class="top-section">
+        <div class="top-text fade-in">
+          <h1>About <span class="highlight">FinSync</span></h1>
+          <p>
+            FinSync is your
+            <span class="highlight">intelligent financial companion</span>,
+            helping you manage money with ease.
+          </p>
+          <p>
+            Track expenses, categorize spending, and turn complex data into
+            <span class="highlight">actionable insights</span>.
+          </p>
+        </div>
+        <div class="top-image">
+          <img
+            src="{{ url_for('static', filename='images/student-finance.jpg') }}"
+            alt="About Image"
+          />
+        </div>
+      </div>
+
+      <div class="info-section fade-in">
+        <p>
+          Get <span class="highlight">real-time updates</span> by connecting
+          securely to your accounts. FinSync organizes transactions
+          automatically.
+        </p>
+      </div>
+
+      <div class="info-section fade-in">
+        <p>
+          We ensure <span class="highlight">security and privacy</span>. Your
+          data is encrypted and never shared without consent.
+        </p>
+      </div>
+
+      <div class="info-section fade-in">
+        <p>
+          FinSync provides
+          <span class="highlight">personalized insights</span> to save, invest,
+          and budget wisely.
+        </p>
+      </div>
+
+      <div class="feature-workflow fade-in">
+        <div class="workflow-box workflow-track">
+          <i class="fas fa-eye"></i><span>Track</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="workflow-box workflow-analyze">
+          <i class="fas fa-chart-line"></i><span>Analyze</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="workflow-box workflow-insights">
+          <i class="fas fa-lightbulb"></i><span>Insights</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="workflow-box workflow-save">
+          <i class="fas fa-piggy-bank"></i><span>Save</span>
+        </div>
+      </div>
+
+      <a href="{{ url_for('dashboard') }}" class="go-dashboard"
+        >Go to Dashboard</a
+      >
+      <a href="{{ url_for('chatbot_page') }}" class="go-dashboard"
+        >Chat with FinBot</a
+      >
+    </div>
+  </body>
+</html>
