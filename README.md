@@ -5,22 +5,26 @@ Finvoice is a lightweight financial management and advisory web application desi
 ---
 
 ## **FinSync Folder Structure**
-FinSync/
+FinSync/                       # Root project folder
 │
-├── app.py                     # Main Flask application
-├── data/
+├── app.py                     # Main Flask application (backend logic)
+│
+├── data/                      # Folder containing Excel datasets
 │   ├── student_spending1.xlsx
 │   └── student_spending2.xlsx
-├── static/
-│   ├── styles.css
-│   └── images/
+│
+├── static/                    # Static files (CSS, images)
+│   ├── styles.css             # Main CSS stylesheet
+│   └── images/                # Images used in the app
 │       ├── speechtext.jpg
 │       └── student_finance.jpg
-├── templates/
-│   ├── index.html
-│   ├── about.html
-│   └── chatbot.html
-└── README.md                  # This file
+│
+├── templates/                 # HTML templates (frontend)
+│   ├── index.html             # Dashboard page
+│   ├── about.html             # About page
+│   └── chatbot.html           # AI chatbot interface
+│
+└── README.md                  # Project documentation
 
 ---
 
